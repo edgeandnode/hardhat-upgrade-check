@@ -1,0 +1,17 @@
+#!/bin/bash
+
+CLI_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/index.js
+
+# print usage if no args
+if [[ $# -eq 0 ]] ; then
+    echo 'Usage:'
+    echo '  hardhat-upgrade-check <tag> [--contracts <c1,c2,c3>]'
+    exit 0
+fi
+
+# cleanup
+rm -rf ~/.upgrade-check
+mkdir -p ~/.upgrade-check
+
+# generate storage layout for "new" contracts
+ts-node "$CLI_PATH" "$@"
