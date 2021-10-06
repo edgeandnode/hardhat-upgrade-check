@@ -1,6 +1,9 @@
 #!/bin/bash
-
-CLI_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/index.js
+REPO_URL="$(git config --get remote.origin.url)"
+WORKING_DIRECTORY="$(pwd)"
+REPO_NAME="$(basename $WORKING_DIRECTORY)"
+LAYOUT_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/layoutReporter.js
+TOOL_DIR=~/.upgrade-check
 
 # print usage if no args
 if [[ $# -eq 0 ]] ; then
@@ -9,9 +12,23 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
+TAG=$1
+
 # cleanup
 rm -rf ~/.upgrade-check
 mkdir -p ~/.upgrade-check
 
+# clone repo
+git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
+
 # generate storage layout for "new" contracts
-ts-node "$CLI_PATH" "$@"
+npx hardhat run "$LAYOUT_PATH" && \
+mv $TOOL_DIR/report.json $TOOL_DIR/report-new.json
+
+# generate storage layout for "old" contracts
+cd $TOOL_DIR/$REPO_NAME
+yarn && yarn build
+npx hardhat run "$LAYOUT_PATH"
+mv $TOOL_DIR/report.json $TOOL_DIR/report-old.json
+
+# compare
