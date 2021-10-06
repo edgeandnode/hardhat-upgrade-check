@@ -1,32 +1,32 @@
-import { Table } from "console-table-printer";
+import { Table } from 'console-table-printer'
 
-import { Row } from "./types";
+import { Row } from './types'
 
 export class ConsoleTable {
-  public table: Row[];
+  public table: Row[]
 
   constructor(data: Row[]) {
-    this.table = data;
+    this.table = data
   }
 
   public get(): Row[] {
-    return this.table;
+    return this.table
   }
 
   public print() {
     if (!this.table.length) {
-      console.error("Table has empty fields");
+      console.error('Table has empty fields')
     } else {
       const p = new Table({
         columns: [
-          { name: "contract", alignment: "left" },
-          { name: "state_variable", alignment: "left" },
-          { name: "storage_slot", alignment: "center" },
-          { name: "offset", alignment: "center" },
-          { name: "type", alignment: "left" },
-          { name: "type_hash", alignment: "left" }
-        ]
-      });
+          { name: 'contract', alignment: 'left' },
+          { name: 'state_variable', alignment: 'left' },
+          { name: 'storage_slot', alignment: 'center' },
+          { name: 'offset', alignment: 'center' },
+          { name: 'type', alignment: 'left' },
+          { name: 'type_hash', alignment: 'left' },
+        ],
+      })
 
       try {
         for (const contract of this.table) {
@@ -37,14 +37,14 @@ export class ConsoleTable {
               storage_slot: stateVariable.slot,
               offset: stateVariable.offset,
               type: stateVariable.type,
-              type_hash: stateVariable.typeHash
+              type_hash: stateVariable.typeHash,
             }
-            p.addRow(row);
+            p.addRow(row)
           }
         }
-        p.printTable();
+        p.printTable()
       } catch (e) {
-        console.log(e);
+        console.log(e)
       }
     }
   }

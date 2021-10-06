@@ -2,33 +2,36 @@
 REPO_URL="$(git config --get remote.origin.url)"
 WORKING_DIRECTORY="$(pwd)"
 REPO_NAME="$(basename $WORKING_DIRECTORY)"
-LAYOUT_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/layoutReporter.js
+MODULE_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/
+LAYOUT_PATH=$MODULE_PATH/layoutReporter.js
+CHECKER_PATH=$MODULE_PATH/upgradeChecker.js
 TOOL_DIR=~/.upgrade-check
 
 # print usage if no args
 if [[ $# -eq 0 ]] ; then
     echo 'Usage:'
-    echo '  hardhat-upgrade-check <tag> [--contracts <c1,c2,c3>]'
+    echo '  hardhat-upgrade-check <tag> [--contracts=<c1,c2,c3>]'
     exit 0
 fi
 
 TAG=$1
 
-# cleanup
-rm -rf ~/.upgrade-check
-mkdir -p ~/.upgrade-check
+# # cleanup
+# rm -rf ~/.upgrade-check
+# mkdir -p ~/.upgrade-check
 
-# clone repo
-git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
+# # clone repo
+# git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
 
-# generate storage layout for "new" contracts
-npx hardhat run "$LAYOUT_PATH" && \
-mv $TOOL_DIR/report.json $TOOL_DIR/report-new.json
+# # generate storage layout for "new" contracts
+# npx hardhat run "$LAYOUT_PATH" && \
+# mv $TOOL_DIR/report.json $TOOL_DIR/report-new.json
 
-# generate storage layout for "old" contracts
-cd $TOOL_DIR/$REPO_NAME
-yarn && yarn build
-npx hardhat run "$LAYOUT_PATH"
-mv $TOOL_DIR/report.json $TOOL_DIR/report-old.json
+# # generate storage layout for "old" contracts
+# cd $TOOL_DIR/$REPO_NAME
+# yarn && yarn build
+# npx hardhat run "$LAYOUT_PATH"
+# mv $TOOL_DIR/report.json $TOOL_DIR/report-old.json
 
 # compare
+node $CHECKER_PATH $TOOL_DIR/report-old.json $TOOL_DIR/report-new.json $2
