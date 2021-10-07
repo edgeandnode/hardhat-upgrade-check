@@ -5,6 +5,13 @@ import { runChecks } from './checks'
 
 import { Contract, ReportResult } from './types'
 
+/**
+ * Checks if upgrading to the new contract is storage-safe and returns
+ * the errors and warnings found, if any
+ * @param oldContract the contract with the storage layout we want to keep
+ * @param newContract the new version of the contract we want to check
+ * @returns ReportResult
+ */
 export function checkContract(
   oldContract?: Contract,
   newContract?: Contract,
@@ -15,7 +22,7 @@ export function checkContract(
   }
 
   if (oldContract !== undefined && newContract !== undefined) {
-    for (const [i, _stateVariable] of newContract.stateVariables.entries()) {
+    for (const [i, _stateVariable] of oldContract.stateVariables.entries()) {
       // check that variable has the same name
       const context = {
         stateVariableIndex: i,
@@ -33,6 +40,12 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
   let md = ''
 
   for (const contract in report) {
+    if (
+      report[contract].error.length === 0 &&
+      report[contract].warning.length === 0
+    ) {
+      continue
+    }
     let contractEntry = `\n## ${contract}\n`
     contractEntry += `### ❌ Errors\n`
     for (const error of report[contract].error) {
@@ -47,6 +60,8 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
       contractEntry += `\n  **got**: ${warning.got}\n`
     }
 
+    contractEntry += '\n-----'
+
     md += contractEntry
   }
 
@@ -54,7 +69,7 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
 }
 
 const defaultCommand = {
-  command: '$0 <old-report> <new-report> [--contracts <c1,c2,c3>]',
+  command: '$0 <old-report> <new-report> [--contracts=<c1,c2,c3>]',
   describe: 'Compare storage layout of contract versions',
   builder: (yargs: Argv): Argv => {
     return yargs
@@ -70,23 +85,37 @@ const defaultCommand = {
     argv: { [key: string]: any } & Argv['argv'],
   ): Promise<void> => {
     const { oldReport, newReport, contracts } = argv
+
     const oldContracts: Contract[] = require(oldReport).contracts
     const newContracts: Contract[] = require(newReport).contracts
-    const contractNames = new Set(
+    let contractNames = new Set(
       oldContracts.map(c => c.name).concat(newContracts.map(c => c.name)),
     )
+    // filter contracts
+    if (contracts) {
+      const contractsFilter = contracts.split(',')
+      contractNames = new Set(
+        Array.from(contractNames).filter(name =>
+          contractsFilter.includes(name),
+        ),
+      )
+    }
+
     const results: Record<string, ReportResult> = {}
 
+    let anyErrors = false
+
     for (const contractName of contractNames) {
-      // TODO: filter contracts
       const newContract = newContracts.find(c => c.name === contractName)
       const oldContract = oldContracts.find(c => c.name === contractName)
       const result = checkContract(oldContract, newContract)
       results[contractName] = result
+      anyErrors = anyErrors || result.error.length > 0
     }
     const reportMD = reportToMarkdown(results)
     console.log(reportMD)
     fs.writeFileSync(`upgrade-report.md`, reportMD)
+    if (anyErrors) process.exit(1)
   },
 }
 

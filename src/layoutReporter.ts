@@ -5,12 +5,14 @@ import { StorageLayout } from './storageLayout'
 const TOOL_DIR = '~/.upgrade-check'
 
 async function main() {
-  // cleanup
   const outputDirectory = TOOL_DIR.replace('~', os.homedir())
-  // generate report for new contracts
-  await hre.run('compile')
-  let storageLayout = new StorageLayout(hre)
-  await storageLayout.export({ directory: outputDirectory, filename: 'report' })
+  const reportName: string = process.env.HUC_LAYOUT_REPORT_NAME || 'report'
+  // generate storage layout report for contracts
+  const storageLayout = new StorageLayout(hre)
+  await storageLayout.export({
+    directory: outputDirectory,
+    filename: reportName,
+  })
 }
 
 main()

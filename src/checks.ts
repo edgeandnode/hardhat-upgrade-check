@@ -19,7 +19,7 @@ export function runChecks(results: ReportResult, context: CheckContext): void {
 }
 
 /**
- * @dev Checks if the variable changed slot
+ * @dev Checks if the variable changed slot or the byte offset inside the slot
  *
  */
 export function checkSlotChanged(context: CheckContext): ReportLine | null {
@@ -31,11 +31,11 @@ export function checkSlotChanged(context: CheckContext): ReportLine | null {
   if (newStateVariable && oldStateVariable) {
     const diffs = stateVariableDiff(newStateVariable, oldStateVariable)
     // if slot is different then that's a breaking change
-    if (diffs.includes('slot')) {
+    if (diffs.includes('slot') || diffs.includes('offset')) {
       result = {
         rule: 'checkSlotChanged',
         severity: 'error',
-        expected: `${oldStateVariable.name} on slot ${oldStateVariable.slot}`,
+        expected: `\`${oldStateVariable.name}\` on slot \`${oldStateVariable.slot}\``,
         got: `${newStateVariable.name} on slot ${newStateVariable.slot}`,
       }
     }
