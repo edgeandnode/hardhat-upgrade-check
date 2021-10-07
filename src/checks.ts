@@ -33,6 +33,7 @@ export function checkSlotChanged(context: CheckContext): ReportLine | null {
     // if slot is different then that's a breaking change
     if (diffs.includes('slot')) {
       result = {
+        rule: 'checkSlotChanged',
         severity: 'error',
         expected: `${oldStateVariable.name} on slot ${oldStateVariable.slot}`,
         got: `${newStateVariable.name} on slot ${newStateVariable.slot}`,
@@ -60,9 +61,10 @@ export function checkTypeChanged(context: CheckContext): ReportLine | null {
     // we trust the hash instead
     if (!diffs.includes('slot') && diffs.includes('typeHash')) {
       result = {
+        rule: 'checkTypeChanged',
         severity: 'warning',
-        expected: `${oldStateVariable.name} with type ${oldStateVariable.type} (${oldStateVariable.typeHash})`,
-        got: `${newStateVariable.name} with type ${newStateVariable.type} (${newStateVariable.typeHash})`,
+        expected: `\`${oldStateVariable.name}\` with type \`${oldStateVariable.type} (${oldStateVariable.typeHash})\``,
+        got: `\`${newStateVariable.name}\` with type \`${newStateVariable.type} (${newStateVariable.typeHash})\``,
       }
     }
   }

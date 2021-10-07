@@ -33,16 +33,18 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
   let md = ''
 
   for (const contract in report) {
-    let contractEntry = `## ${contract}\n`
-    contractEntry += `### Errors\n`
+    let contractEntry = `\n## ${contract}\n`
+    contractEntry += `### ❌ Errors\n`
     for (const error of report[contract].error) {
-      contractEntry += `\n**expected**: ${error.expected}\n`
-      contractEntry += `\n**got**: ${error.got}\n`
+      contractEntry += `\n- **rule**: ${error.rule}\n`
+      contractEntry += `\n  **expected**: ${error.expected}\n`
+      contractEntry += `\n  **got**: ${error.got}\n`
     }
-    contractEntry += `### Warnings\n`
+    contractEntry += `### ⚠️ Warnings\n`
     for (const warning of report[contract].warning) {
-      contractEntry += `\n**expected**: ${warning.expected}\n`
-      contractEntry += `\n**got**: ${warning.got}\n`
+      contractEntry += `\n- **rule**: ${warning.rule}\n`
+      contractEntry += `\n  **expected**: ${warning.expected}\n`
+      contractEntry += `\n  **got**: ${warning.got}\n`
     }
 
     md += contractEntry
