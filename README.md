@@ -35,3 +35,12 @@ module.exports = {
   },
   ....
 ```
+
+## Local development
+
+```bash
+# on this repo
+yarn build && yarn link
+# and then it will be available as a global script
+hardhat-upgrade-check
+```
