@@ -13,6 +13,7 @@ import {
 const CHECKS: CheckFn[] = [
   checkMissingVariable,
   checkSlotChanged,
+  checkOrderChanged,
   checkTypeChanged,
   checkNameChanged,
 ]
@@ -54,13 +55,14 @@ export function checkMissingVariable(context: CheckContext): ReportLine | null {
 
 /**
  * @dev Checks if the variable changed slot or byte offset inside the slot
- * This check detects changes in primitive types and variable order
  */
 export function checkSlotChanged(context: CheckContext): ReportLine | null {
   let result: ReportLine | null = null
   const { stateVariableIndex, oldContract, newContract } = context
-  const newStateVariable = safeGetStateVar(newContract, stateVariableIndex)
   const oldStateVariable = safeGetStateVar(oldContract, stateVariableIndex)
+  const newStateVariable = newContract.stateVariables.find(
+    sv => sv.name === (oldStateVariable || {}).name,
+  )
 
   if (newStateVariable && oldStateVariable) {
     const diffs = stateVariableDiff(newStateVariable, oldStateVariable)
@@ -71,6 +73,35 @@ export function checkSlotChanged(context: CheckContext): ReportLine | null {
       result = {
         variable: oldStateVariable.name,
         rule: 'checkSlotChanged',
+        severity: 'error',
+        expected,
+        got,
+        diff: textDiff(expected, got),
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * @dev Checks if the variable changed order
+ */
+export function checkOrderChanged(context: CheckContext): ReportLine | null {
+  let result: ReportLine | null = null
+  const { stateVariableIndex, oldContract, newContract } = context
+  const newStateVariable = safeGetStateVar(newContract, stateVariableIndex)
+  const oldStateVariable = safeGetStateVar(oldContract, stateVariableIndex)
+
+  if (newStateVariable && oldStateVariable) {
+    const diffs = stateVariableDiff(newStateVariable, oldStateVariable)
+    // if slot is different then that's a breaking change
+    if (diffs.includes('name') && diffs.includes('typeHash')) {
+      const expected = `'${oldStateVariable.name}' with type '${oldStateVariable.type} on slot '${oldStateVariable.slot}'\n`
+      const got = `'${newStateVariable.name}' with type '${newStateVariable.type} on slot '${newStateVariable.slot}'\n`
+      result = {
+        variable: oldStateVariable.name,
+        rule: 'checkOrderChanged',
         severity: 'error',
         expected,
         got,
@@ -99,7 +130,11 @@ export function checkTypeChanged(context: CheckContext): ReportLine | null {
     // slot is handled in another check.
     // no need to check type as hardhat appends a random number to typings
     // we trust the hash instead
-    if (!diffs.includes('slot') && diffs.includes('typeHash')) {
+    if (
+      !diffs.includes('name') &&
+      !diffs.includes('slot') &&
+      diffs.includes('typeHash')
+    ) {
       const expected = `'${oldStateVariable.name}' with type '${oldStateVariable.type} (${oldStateVariable.typeHash})'\n`
       const got = `'${newStateVariable.name}' with type '${newStateVariable.type} (${newStateVariable.typeHash})'\n`
       const expectedTypeDef: TypeDefinition =

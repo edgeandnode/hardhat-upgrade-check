@@ -67,14 +67,18 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
       continue
     }
     let contractEntry = `\n## ${contract}\n`
+
     contractEntry += `### ❌ Errors\n`
     for (const error of report[contract].error) {
       contractEntry += formatEntry(error)
     }
+    if (report[contract].error.length === 0) contractEntry += 'None\n'
+
     contractEntry += `### ⚠️ Warnings\n`
     for (const warning of report[contract].warning) {
       contractEntry += formatEntry(warning)
     }
+    if (report[contract].warning.length === 0) contractEntry += 'None\n'
 
     contractEntry += '\n-----'
 

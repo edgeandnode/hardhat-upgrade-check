@@ -22,6 +22,10 @@ function typeHash(type: string, types: Record<string, TypeDefinition>) {
 function removeKey(obj, key) {
   for (const prop in obj) {
     if (prop === key) delete obj[prop]
+    else if (Array.isArray(obj[prop]))
+      obj[prop].forEach(element => {
+        removeKey(element, key)
+      })
     else if (typeof obj[prop] === 'object') removeKey(obj[prop], key)
   }
 }
@@ -66,6 +70,7 @@ export class StorageLayout {
         for (const [typeName, typeDef] of Object.entries(
           contractAST.storageLayout.types as Record<string, TypeDefinition>,
         )) {
+          removeKey(typeDef, 'astId')
           contract.types[typeName] = typeDef
         }
         // Map storage layout
