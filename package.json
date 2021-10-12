@@ -43,23 +43,25 @@
     "@typescript-eslint/parser": "^4.13.0",
     "chai": "^4.2.0",
     "dotenv": "^6.2.0",
+    "eslint": "^7.17.0",
+    "eslint-config-prettier": "^7.1.0",
+    "eslint-plugin-prettier": "^3.3.1",
     "hardhat": "^2.0.3",
     "mocha": "^5.2.0",
     "prettier": "^2.4.1",
     "source-map-support": "^0.5.12",
     "ts-node": "^8.1.0",
-    "eslint": "^7.17.0",
-    "eslint-config-prettier": "^7.1.0",
-    "eslint-plugin-prettier": "^3.3.1",
     "typescript": "^3.4.5"
   },
   "peerDependencies": {
     "hardhat": "^2.0.3"
   },
   "dependencies": {
+    "@types/git-diff": "^2.0.2",
     "@types/yargs": "^17.0.3",
     "console-table-printer": "^2.9.0",
     "esm": "^3.2.25",
+    "git-diff": "^2.0.6",
     "ora": "^6.0.1",
     "yargs": "^17.2.1"
   }

@@ -7,16 +7,23 @@ import { ExportConfig, Row, Table, TypeDefinition } from './types'
 
 function typeHash(type: string, types: Record<string, TypeDefinition>) {
   const typeDefinition = types[type]
-  if (typeDefinition.value) {
-    typeDefinition.value = types[typeDefinition.value]
-      ? JSON.stringify(types[typeDefinition.value])
-      : typeDefinition.value
+  if (typeDefinition.value && types[typeDefinition.value as string]) {
+    const value = types[typeDefinition.value as string]
+    removeKey(value, 'astId')
+    typeDefinition.value = JSON.stringify(value, null, 2)
   }
   return crypto
     .createHash('sha256')
     .update(JSON.stringify(typeDefinition))
     .digest('hex')
     .slice(0, 12) // arbitrary length for display purposes
+}
+
+function removeKey(obj, key) {
+  for (const prop in obj) {
+    if (prop === key) delete obj[prop]
+    else if (typeof obj[prop] === 'object') removeKey(obj[prop], key)
+  }
 }
 
 export class StorageLayout {
@@ -26,7 +33,7 @@ export class StorageLayout {
     this.env = hre
   }
 
-  public async export(exportConfig: ExportConfig) {
+  public async export(exportConfig: ExportConfig): Promise<void> {
     const data: Table = { contracts: [] }
 
     for (const fullName of await this.env.artifacts.getAllFullyQualifiedNames()) {
@@ -79,7 +86,9 @@ export class StorageLayout {
     const reportName = exportConfig.filename
     const outputDirectory = exportConfig.directory
     fs.writeFileSync(`${outputDirectory}/${reportName}.json`, report)
-    const consoleTable = new ConsoleTable(data.contracts)
-    consoleTable.print()
+    if (process.env.HUC_PRINT_DEBUG_TABLES) {
+      const consoleTable = new ConsoleTable(data.contracts)
+      consoleTable.print()
+    }
   }
 }
