@@ -7,6 +7,9 @@ LAYOUT_PATH=$MODULE_PATH/layoutReporter.js
 CHECKER_PATH=$MODULE_PATH/upgradeChecker.js
 TOOL_DIR=~/.upgrade-check
 
+# fail on error
+set -e
+
 # print usage if no args
 if [[ $# -eq 0 ]] ; then
     echo 'Usage:'

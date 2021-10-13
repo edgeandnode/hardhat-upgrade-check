@@ -135,7 +135,10 @@ const defaultCommand = {
     const reportMD = reportToMarkdown(results)
     console.log(reportMD)
     fs.writeFileSync('./upgrade-report.md', reportMD)
-    if (anyErrors) process.exit(1)
+    if (anyErrors) {
+      console.error('❌ Error: Upgrade is not safe')
+      process.exit(1)
+    }
   },
 }
 
