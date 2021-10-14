@@ -18,7 +18,7 @@ export interface TypeDefinition {
   members?: any
   label: string
   numberOfBytes: string
-  value?: string
+  value?: string | TypeDefinition
 }
 
 export interface Table {
@@ -39,10 +39,17 @@ export interface Contract {
 }
 
 export interface ReportLine {
+  variable: string
   rule: string
   severity: string
   expected: string
   got: string
+  diff: string
+  typeDefinitions?: {
+    label: string
+    expected: string
+    got: string
+  }
 }
 
 export interface ReportResult {

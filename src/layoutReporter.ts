@@ -2,7 +2,7 @@ import os from 'os'
 import hre from 'hardhat'
 import { StorageLayout } from './storageLayout'
 
-const TOOL_DIR = '~/.upgrade-check'
+const TOOL_DIR = '/tmp/.upgrade-check'
 
 async function main() {
   const outputDirectory = TOOL_DIR.replace('~', os.homedir())

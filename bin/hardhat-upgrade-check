@@ -2,10 +2,19 @@
 REPO_URL="$(git config --get remote.origin.url)"
 WORKING_DIRECTORY="$(pwd)"
 REPO_NAME="$(basename $WORKING_DIRECTORY)"
-MODULE_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/
+
+# choose dist directory based on wether the module is being run as a cli or local package
+MODULE_PATH="$(dirname $0)"/../dist
+if [ -z "$HUC_LOCAL_MODE" ]; then
+  MODULE_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist
+fi
+
 LAYOUT_PATH=$MODULE_PATH/layoutReporter.js
 CHECKER_PATH=$MODULE_PATH/upgradeChecker.js
-TOOL_DIR=~/.upgrade-check
+TOOL_DIR=/tmp/.upgrade-check
+
+# fail on error
+set -e
 
 # print usage if no args
 if [[ $# -eq 0 ]] ; then
@@ -17,8 +26,8 @@ fi
 TAG=$1
 
 # cleanup
-rm -rf ~/.upgrade-check
-mkdir -p ~/.upgrade-check
+rm -rf $TOOL_DIR
+mkdir -p $TOOL_DIR
 
 # clone repo
 git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
@@ -33,6 +42,9 @@ cd $TOOL_DIR/$REPO_NAME
 yarn
 npx hardhat clean && npx hardhat compile
 HUC_LAYOUT_REPORT_NAME="report-old" npx hardhat run "$LAYOUT_PATH"
+
+# return to original directory
+cd $WORKING_DIRECTORY
 
 # compare
 node $CHECKER_PATH $TOOL_DIR/report-old.json $TOOL_DIR/report-new.json $2
