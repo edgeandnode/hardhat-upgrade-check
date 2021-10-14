@@ -1,5 +1,6 @@
 # hardhat-upgrade-check
 A tool to compare the storage layout of your current contracts vs a specific git commit/tag
+and make sure they are safe to upgrade through a transparent proxy.
 
 ## Requirements
 - NodeJS >= 14.0
@@ -8,15 +9,27 @@ A tool to compare the storage layout of your current contracts vs a specific git
 - unix based OS
 
 ## Installation
+As a CLI
 ```
 yarn global add hardhat-upgrade-check
 ```
 
+As a hardhat plugin
+```
+yarn add hardhat-upgrade-check
+```
+
 ## Usage
 
+As a CLI
 ```sh
 // In the root folder of your hardhat project
 hardhat-upgrade-check <tag or git commit to compare> [--contracts <c1,c2,c3>]
+```
+
+As a hardhat plugin
+```
+npx hardhat upgrade-check
 ```
 
 ## Configuration
@@ -40,6 +53,19 @@ module.exports = {
     },
   },
   ....
+```
+
+and also define which commit or tag you want to use as the base for the storage layout comparison with your current contracts
+
+```javascript
+  {
+    ...
+    upgradeCheck: {
+      repoVersion: '<git commit or tag>',
+      // optional contracts filter
+      contracts: ['MyERC20', 'Controller']
+    },
+  }
 ```
 
 ## How it works

@@ -1,6 +1,7 @@
 import path from 'path'
 import { execSync } from 'child_process'
-import { extendEnvironment } from 'hardhat/config'
+import { extendConfig, extendEnvironment, task } from 'hardhat/config'
+import { HardhatConfig, HardhatUserConfig } from 'hardhat/types'
 
 import './type-extensions'
 
@@ -32,6 +33,23 @@ export function upgradeCheck(
   }
 }
 
+extendConfig(
+  (config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    config.upgradeCheck = {
+      repoVersion: userConfig.upgradeCheck?.repoVersion,
+      contracts: userConfig.upgradeCheck?.contracts,
+    }
+  },
+)
+
 extendEnvironment(hre => {
   hre.upgradeCheck = upgradeCheck
+})
+
+task(
+  'upgrade-check',
+  "check that the current contracts don't break the previous storage layout",
+).setAction(async (_, hre) => {
+  const upgradeCheckConfig = hre.config.upgradeCheck
+  hre.upgradeCheck(upgradeCheckConfig.repoVersion, upgradeCheckConfig.contracts)
 })
