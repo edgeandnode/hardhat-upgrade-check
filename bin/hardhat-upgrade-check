@@ -11,7 +11,7 @@ fi
 
 LAYOUT_PATH=$MODULE_PATH/layoutReporter.js
 CHECKER_PATH=$MODULE_PATH/upgradeChecker.js
-TOOL_DIR=~/.upgrade-check
+TOOL_DIR=/tmp/.upgrade-check
 
 # fail on error
 set -e
@@ -26,8 +26,8 @@ fi
 TAG=$1
 
 # cleanup
-rm -rf ~/.upgrade-check
-mkdir -p ~/.upgrade-check
+rm -rf $TOOL_DIR
+mkdir -p $TOOL_DIR
 
 # clone repo
 git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
