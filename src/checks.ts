@@ -28,7 +28,7 @@ export function runChecks(results: ReportResult, context: CheckContext): void {
 }
 
 /**
- * @dev Checks if the variable is missing in the new contract
+ * @dev Checks if a variable is missing in the new contract
  *
  */
 export function checkMissingVariable(context: CheckContext): ReportLine | null {

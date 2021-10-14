@@ -1,68 +1,37 @@
-import os from 'os'
-import fs from 'fs'
+import path from 'path'
 import { execSync } from 'child_process'
-import yargs, { Argv } from 'yargs'
+import { extendEnvironment } from 'hardhat/config'
 
-import { StorageLayout } from './storageLayout'
+import './type-extensions'
 
-const TOOL_DIR = '~/.upgrade-check'
-
-function requireUncached(module) {
-  delete require.cache[require.resolve(module)]
-  return require(module)
-}
-
-const defaultCommand = {
-  command: '$0 <tag> [--contracts <c1,c2,c3>]',
-  describe:
-    'Compare storage layout of current contracts vs a specific git commit/tag',
-  builder: (yargs: Argv): Argv => {
-    return yargs.positional('tag', { type: 'string' }).option('contracts', {
-      description: 'Comma-separated list of contract names',
-      type: 'string',
-      required: false,
-    })
-  },
-  handler: async (
-    argv: { [key: string]: any } & Argv['argv'],
-  ): Promise<void> => {
-    const { tag } = argv
-    // cleanup
-    const outputDirectory = TOOL_DIR.replace('~', os.homedir())
-    if (fs.existsSync(outputDirectory)) {
-      execSync(`rm -rf ${outputDirectory}`)
-      fs.mkdirSync(outputDirectory)
-    }
-    // get repo details
-    const repoURL = execSync('git config --get remote.origin.url')
-      .toString()
-      .trim()
-    const repoName = execSync('basename "$(pwd)"').toString().trim()
-    // clone repo
+/**
+ * Check that the current changes in contracts won't break the storage layout defined
+ * by the previous version of the contracts
+ *
+ * @export
+ * @param {string} gitCommitOrTag a git commit or tag to use to compare current layout changes against
+ * @param {string[]} [contracts] contract names to show on the report
+ */
+export function upgradeCheck(
+  gitCommitOrTag: string,
+  contracts?: string[],
+): void {
+  const contractsFilter = contracts?.length
+    ? `--contracts=${contracts.join(',')}`
+    : ''
+  const binPath = path.resolve(__dirname, '..', 'bin', 'hardhat-upgrade-check')
+  // HUC_LOCAL_MODE=true let's the script know it should resolve its files
+  // within the local node_modules folder instead of the global node installation
+  try {
     execSync(
-      `git clone --depth 1 --branch ${tag} ${repoURL} ${outputDirectory}/${repoName}`,
+      `HUC_LOCAL_MODE=true ${binPath} ${gitCommitOrTag} ${contractsFilter}`,
+      { stdio: 'inherit' },
     )
-    // generate report for new contracts
-    let hre = requireUncached('hardhat')
-    await hre.run('compile')
-    let storageLayout = new StorageLayout(hre)
-    await storageLayout.export({
-      directory: outputDirectory,
-      filename: 'new-contracts-report',
-    })
-    // change hardhat context
-    hre = null
-    process.chdir(`${outputDirectory}/${repoName}`)
-    execSync(`cd ${outputDirectory}/${repoName}`)
-    // generate report for contracts of <tag>
-    hre = requireUncached('hardhat')
-    await hre.run('compile')
-    storageLayout = new StorageLayout(hre)
-    await storageLayout.export({
-      directory: outputDirectory,
-      filename: 'old-contracts-report',
-    })
-  },
+  } catch (error) {
+    process.exit(1)
+  }
 }
 
-yargs.scriptName('hardhat-upgrade-check').command(defaultCommand).help().argv
+extendEnvironment(hre => {
+  hre.upgradeCheck = upgradeCheck
+})

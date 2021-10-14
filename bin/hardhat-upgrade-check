@@ -2,7 +2,13 @@
 REPO_URL="$(git config --get remote.origin.url)"
 WORKING_DIRECTORY="$(pwd)"
 REPO_NAME="$(basename $WORKING_DIRECTORY)"
-MODULE_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist/
+
+# choose dist directory based on wether the module is being run as a cli or local package
+MODULE_PATH="$(dirname $0)"/../dist
+if [ -z "$HUC_LOCAL_MODE" ]; then
+  MODULE_PATH="$(dirname $0)"/../lib/node_modules/hardhat-upgrade-check/dist
+fi
+
 LAYOUT_PATH=$MODULE_PATH/layoutReporter.js
 CHECKER_PATH=$MODULE_PATH/upgradeChecker.js
 TOOL_DIR=~/.upgrade-check
