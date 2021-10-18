@@ -10,22 +10,22 @@ import './type-extensions'
  * by the previous version of the contracts
  *
  * @export
- * @param {string} gitCommitOrTag a git commit or tag to use to compare current layout changes against
- * @param {string[]} [contracts] contract names to show on the report
+ * @param {HardhatConfig['upgradeCheck']} upgradeCheckConfig
  */
 export function upgradeCheck(
-  gitCommitOrTag: string,
-  contracts?: string[],
+  upgradeCheckConfig: HardhatConfig['upgradeCheck'],
 ): void {
+  const { contracts, repoVersion, output } = upgradeCheckConfig
   const contractsFilter = contracts?.length
     ? `--contracts=${contracts.join(',')}`
     : ''
+  const outputPath = output ? `--output=${output}` : ''
   const binPath = path.resolve(__dirname, '..', 'bin', 'hardhat-upgrade-check')
   // HUC_LOCAL_MODE=true let's the script know it should resolve its files
   // within the local node_modules folder instead of the global node installation
   try {
     execSync(
-      `HUC_LOCAL_MODE=true ${binPath} ${gitCommitOrTag} ${contractsFilter}`,
+      `HUC_LOCAL_MODE=true ${binPath} ${repoVersion} ${contractsFilter} ${outputPath}`,
       { stdio: 'inherit' },
     )
   } catch (error) {
@@ -38,6 +38,7 @@ extendConfig(
     config.upgradeCheck = {
       repoVersion: userConfig.upgradeCheck?.repoVersion,
       contracts: userConfig.upgradeCheck?.contracts,
+      output: userConfig.upgradeCheck?.output,
     }
   },
 )
@@ -51,5 +52,5 @@ task(
   "check that the current contracts don't break the previous storage layout",
 ).setAction(async (_, hre) => {
   const upgradeCheckConfig = hre.config.upgradeCheck
-  hre.upgradeCheck(upgradeCheckConfig.repoVersion, upgradeCheckConfig.contracts)
+  hre.upgradeCheck(upgradeCheckConfig)
 })

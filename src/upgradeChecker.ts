@@ -38,7 +38,8 @@ export function checkContract(
 }
 
 const defaultCommand = {
-  command: '$0 <old-report> <new-report> [--contracts=<c1,c2,c3>]',
+  command:
+    '$0 <old-report> <new-report> [--contracts=<c1,c2,c3>][--output=/path/to/report.md]',
   describe: 'Compare storage layout of contract versions',
   builder: (yargs: Argv): Argv => {
     return yargs
@@ -49,11 +50,17 @@ const defaultCommand = {
         type: 'string',
         required: false,
       })
+      .option('output', {
+        description:
+          'Path were report should be stored. Default: ./upgrade-report.md',
+        type: 'string',
+        required: false,
+      })
   },
   handler: async (
     argv: { [key: string]: any } & Argv['argv'],
   ): Promise<void> => {
-    const { oldReport, newReport, contracts } = argv
+    const { oldReport, newReport, contracts, output } = argv
 
     const oldContracts: Contract[] = require(oldReport).contracts
     const newContracts: Contract[] = require(newReport).contracts
@@ -81,9 +88,14 @@ const defaultCommand = {
       results[contractName] = result
       anyErrors = anyErrors || result.error.length > 0
     }
-    const reportMD = reportToMarkdown(results)
+    // print to stdout
     console.log(reportToStdout(results))
-    fs.writeFileSync('./upgrade-report.md', reportMD)
+    // save report
+    const reportMD = reportToMarkdown(results)
+    let reportPath = './upgrade-report.md'
+    if (output) reportPath = output
+    fs.writeFileSync(reportPath, reportMD)
+    // fail on errors
     if (anyErrors) {
       console.error('❌ Error: Upgrade is not safe')
       process.exit(1)
