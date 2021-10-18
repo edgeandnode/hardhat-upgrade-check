@@ -39,7 +39,7 @@ export function checkMissingVariable(context: CheckContext): ReportLine | null {
 
   if (newStateVariable === null && oldStateVariable) {
     const expected = `'${oldStateVariable.name}' on slot '${oldStateVariable.slot}'\n`
-    const got = 'null'
+    const got = 'null\n'
     result = {
       variable: oldStateVariable.name,
       rule: 'checkMissingVariable',

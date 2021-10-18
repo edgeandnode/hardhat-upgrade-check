@@ -2,9 +2,9 @@
 import fs from 'fs'
 import yargs, { Argv } from 'yargs'
 import { runChecks } from './checks'
-import gitDiff from 'git-diff'
+import { reportToMarkdown, reportToStdout } from './reportFormatters'
 
-import { Contract, ReportLine, ReportResult } from './types'
+import { Contract, ReportResult } from './types'
 
 /**
  * Checks if upgrading to the new contract is storage-safe and returns
@@ -35,57 +35,6 @@ export function checkContract(
   }
 
   return results
-}
-
-export function reportToMarkdown(report: Record<string, ReportResult>): string {
-  let md = ''
-
-  function formatEntry(entry: ReportLine) {
-    let result = ''
-    result += `\n- **Variable:** \`${entry.variable}\`\n`
-    result += `\n  **Rule:** \`${entry.rule}\`\n`
-    result += `\n  **Changes:**\n`
-    result += `\n${entry.diff}\n`
-    if (entry.typeDefinitions) {
-      // Add table with type definitions
-      result += `  **Type definition changes for \`${entry.typeDefinitions.label}\`:**`
-      const typeDefDiff = (
-        gitDiff(entry.typeDefinitions.expected, entry.typeDefinitions.got, {
-          noHeaders: true,
-        }) ?? ''
-      ).replace(/\n/g, '\n  ')
-      result += `\n  \`\`\`diff\n  ${typeDefDiff}\n  \`\`\``
-    }
-    return result
-  }
-
-  for (const contract in report) {
-    if (
-      report[contract].error.length === 0 &&
-      report[contract].warning.length === 0
-    ) {
-      continue
-    }
-    let contractEntry = `\n## ${contract}\n`
-
-    contractEntry += `### ❌ Errors\n`
-    for (const error of report[contract].error) {
-      contractEntry += formatEntry(error)
-    }
-    if (report[contract].error.length === 0) contractEntry += 'None\n'
-
-    contractEntry += `### ⚠️ Warnings\n`
-    for (const warning of report[contract].warning) {
-      contractEntry += formatEntry(warning)
-    }
-    if (report[contract].warning.length === 0) contractEntry += 'None\n'
-
-    contractEntry += '\n-----'
-
-    md += contractEntry
-  }
-
-  return md
 }
 
 const defaultCommand = {
@@ -133,7 +82,7 @@ const defaultCommand = {
       anyErrors = anyErrors || result.error.length > 0
     }
     const reportMD = reportToMarkdown(results)
-    console.log(reportMD)
+    console.log(reportToStdout(results))
     fs.writeFileSync('./upgrade-report.md', reportMD)
     if (anyErrors) {
       console.error('❌ Error: Upgrade is not safe')

@@ -41,7 +41,7 @@ export interface Contract {
 export interface ReportLine {
   variable: string
   rule: string
-  severity: string
+  severity: 'warning' | 'error'
   expected: string
   got: string
   diff: string
