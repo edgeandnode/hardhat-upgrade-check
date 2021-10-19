@@ -26,6 +26,9 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
     return result
   }
 
+  let totalErrors = 0
+  let totalWarnings = 0
+
   for (const contract in report) {
     if (
       report[contract].error.length === 0 &&
@@ -38,12 +41,14 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
     contractEntry += `### ❌ Errors\n`
     for (const error of report[contract].error) {
       contractEntry += formatEntry(error)
+      totalErrors += 1
     }
     if (report[contract].error.length === 0) contractEntry += 'None\n'
 
     contractEntry += `### ⚠️ Warnings\n`
     for (const warning of report[contract].warning) {
       contractEntry += formatEntry(warning)
+      totalWarnings += 1
     }
     if (report[contract].warning.length === 0) contractEntry += 'None\n'
 
@@ -51,6 +56,8 @@ export function reportToMarkdown(report: Record<string, ReportResult>): string {
 
     md += contractEntry
   }
+
+  md += `\nFound ${totalErrors} errors and ${totalWarnings} warnings`
 
   return md
 }
