@@ -32,7 +32,10 @@ rm -rf $TOOL_DIR
 mkdir -p $TOOL_DIR
 
 # clone repo
-git clone --depth 1 --branch $TAG $REPO_URL $TOOL_DIR/$REPO_NAME
+git clone $REPO_URL $TOOL_DIR/$REPO_NAME
+cd $TOOL_DIR/$REPO_NAME
+git checkout $TAG
+cd $WORKING_DIRECTORY
 
 # generate storage layout for "new" contracts
 yarn
