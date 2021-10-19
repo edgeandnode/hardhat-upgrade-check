@@ -2,9 +2,9 @@
 import fs from 'fs'
 import yargs, { Argv } from 'yargs'
 import { runChecks } from './checks'
-import gitDiff from 'git-diff'
+import { reportToMarkdown, reportToStdout } from './reportFormatters'
 
-import { Contract, ReportLine, ReportResult } from './types'
+import { Contract, ReportResult } from './types'
 
 /**
  * Checks if upgrading to the new contract is storage-safe and returns
@@ -37,59 +37,9 @@ export function checkContract(
   return results
 }
 
-export function reportToMarkdown(report: Record<string, ReportResult>): string {
-  let md = ''
-
-  function formatEntry(entry: ReportLine) {
-    let result = ''
-    result += `\n- **Variable:** \`${entry.variable}\`\n`
-    result += `\n  **Rule:** \`${entry.rule}\`\n`
-    result += `\n  **Changes:**\n`
-    result += `\n${entry.diff}\n`
-    if (entry.typeDefinitions) {
-      // Add table with type definitions
-      result += `  **Type definition changes for \`${entry.typeDefinitions.label}\`:**`
-      const typeDefDiff = (
-        gitDiff(entry.typeDefinitions.expected, entry.typeDefinitions.got, {
-          noHeaders: true,
-        }) ?? ''
-      ).replace(/\n/g, '\n  ')
-      result += `\n  \`\`\`diff\n  ${typeDefDiff}\n  \`\`\``
-    }
-    return result
-  }
-
-  for (const contract in report) {
-    if (
-      report[contract].error.length === 0 &&
-      report[contract].warning.length === 0
-    ) {
-      continue
-    }
-    let contractEntry = `\n## ${contract}\n`
-
-    contractEntry += `### ❌ Errors\n`
-    for (const error of report[contract].error) {
-      contractEntry += formatEntry(error)
-    }
-    if (report[contract].error.length === 0) contractEntry += 'None\n'
-
-    contractEntry += `### ⚠️ Warnings\n`
-    for (const warning of report[contract].warning) {
-      contractEntry += formatEntry(warning)
-    }
-    if (report[contract].warning.length === 0) contractEntry += 'None\n'
-
-    contractEntry += '\n-----'
-
-    md += contractEntry
-  }
-
-  return md
-}
-
 const defaultCommand = {
-  command: '$0 <old-report> <new-report> [--contracts=<c1,c2,c3>]',
+  command:
+    '$0 <old-report> <new-report> [--contracts=<c1,c2,c3>][--output=/path/to/report.md]',
   describe: 'Compare storage layout of contract versions',
   builder: (yargs: Argv): Argv => {
     return yargs
@@ -100,11 +50,17 @@ const defaultCommand = {
         type: 'string',
         required: false,
       })
+      .option('output', {
+        description:
+          'Path were report should be stored. Default: ./upgrade-report.md',
+        type: 'string',
+        required: false,
+      })
   },
   handler: async (
     argv: { [key: string]: any } & Argv['argv'],
   ): Promise<void> => {
-    const { oldReport, newReport, contracts } = argv
+    const { oldReport, newReport, contracts, output } = argv
 
     const oldContracts: Contract[] = require(oldReport).contracts
     const newContracts: Contract[] = require(newReport).contracts
@@ -132,9 +88,14 @@ const defaultCommand = {
       results[contractName] = result
       anyErrors = anyErrors || result.error.length > 0
     }
+    // print to stdout
+    console.log(reportToStdout(results))
+    // save report
     const reportMD = reportToMarkdown(results)
-    console.log(reportMD)
-    fs.writeFileSync('./upgrade-report.md', reportMD)
+    let reportPath = './upgrade-report.md'
+    if (output) reportPath = output
+    fs.writeFileSync(reportPath, reportMD)
+    // fail on errors
     if (anyErrors) {
       console.error('❌ Error: Upgrade is not safe')
       process.exit(1)
